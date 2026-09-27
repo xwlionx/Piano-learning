@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clavier — apprendre le piano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ivory: #FAF7F0;
+    --walnut: #2E2018;
+    --walnut-soft: #4A3629;
+    --brass: #B8863B;
+    --brass-light: #D9AE6C;
+    --sage: #7A8B6F;
+    --coral: #C46A5A;
+    --line: rgba(46,32,24,0.14);
+    --bg: var(--ivory);
+    --fg: var(--walnut);
+    --card: #FFFFFF;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1C1712;
+      --fg: #F1E9DD;
+      --card: #262019;
+      --line: rgba(241,233,221,0.14);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1C1712;
+    --fg: #F1E9DD;
+    --card: #262019;
+    --line: rgba(241,233,221,0.14);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    padding: 3.5rem 1.5rem 1.5rem;
+    text-align: center;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.01em;
+  }
+  header p {
+    max-width: 34em;
+    margin: 0 auto;
+    color: var(--fg);
+    opacity: 0.72;
+    font-size: 1.05rem;
+    line-height: 1.5;
+  }
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1.25rem 4rem;
+  }
+  section {
+    margin-top: 3rem;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 0.35rem;
+  }
+  .section-sub {
+    opacity: 0.65;
+    font-size: 0.95rem;
+    margin: 0 0 1.25rem;
+  }
+
+  /* Piano */
+  .piano-wrap {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 1.5rem 1rem 1.75rem;
+    overflow-x: auto;
+  }
+  .piano-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+  button {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--fg);
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  button:hover { background: var(--line); }
+  button:active { transform: scale(0.97); }
+  button.primary {
+    background: var(--brass);
+    border-color: var(--brass);
+    color: #251A0E;
+  }
+  button.primary:hover { background: var(--brass-light); }
+  button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  .keyboard {
+    position: relative;
+    display: flex;
+    height: 200px;
+    min-width: 560px;
+    user-select: none;
+  }
+  .white-key {
+    position: relative;
+    flex: 1;
+    background: #FFFDF9;
+    border: 1px solid #D8CFC0;
+    border-radius: 0 0 8px 8px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 10px;
+    font-size: 0.75rem;
+    color: #9C8F78;
+    cursor: pointer;
+    transition: background 0.08s ease;
+  }
+  .white-key.active { background: var(--brass-light); }
+  .black-key {
+    position: absolute;
+    top: 0;
+    width: 6.5%;
+    height: 62%;
+    background: #241A12;
+    border-radius: 0 0 6px 6px;
+    z-index: 2;
+    cursor: pointer;
+    transition: background 0.08s ease;
+  }
+  .black-key.active { background: var(--brass); }
+  .key-label { pointer-events: none; }
+
+  /* Game */
+  .game-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 1.75rem;
+    text-align: center;
+  }
+  .score {
+    font-family: 'Fraunces', serif;
+    font-size: 2.2rem;
+    margin: 0.25rem 0 1rem;
+  }
+  .game-status {
+    min-height: 1.4em;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    opacity: 0.85;
+  }
+  .game-status.correct { color: var(--sage); opacity: 1; }
+  .game-status.wrong { color: var(--coral); opacity: 1; }
+
+  .about {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    opacity: 0.8;
+  }
+  footer {
+    text-align: center;
+    padding: 2rem 1rem 3rem;
+    font-size: 0.85rem;
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Trouve tes premières notes au clavier</h1>
+  <p>Un piano dans le navigateur pour écouter, reconnaître et mémoriser les notes — sans rien installer.</p>
+</header>
+
+<main>
+  <section id="piano-section">
+    <div class="section-title">Le clavier</div>
+    <p class="section-sub">Clique sur une touche pour l'entendre, ou joue avec ton clavier d'ordinateur (rangée du milieu).</p>
+    <div class="piano-wrap">
+      <div class="piano-controls">
+        <button id="toggleLabels" class="primary">Cacher les noms</button>
+        <button id="toggleOctave">Octave grave / aiguë</button>
+      </div>
+      <div class="keyboard" id="keyboard"></div>
+    </div>
+  </section>
+
+  <section id="game-section">
+    <div class="section-title">Entraîne ton oreille</div>
+    <p class="section-sub">Une série de 10 notes, une par une. Retrouve chacune sur le clavier ci-dessous.</p>
+    <div class="game-card">
+      <div class="score" id="score">0 / 10</div>
+      <div class="game-status" id="gameStatus">Choisis un niveau, puis appuie sur « Commencer ».</div>
+      <div class="piano-controls" id="levelControls"></div>
+      <div class="piano-controls">
+        <button id="playNote" class="primary">▶ Commencer</button>
+      </div>
+      <div class="keyboard" id="gameKeyboard" style="margin-top:1.25rem;"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title">Pourquoi commencer ainsi</div>
+    <p class="about">Reconnaître une note à l'oreille et savoir où la trouver sont deux réflexes distincts — le clavier ci-dessus travaille le premier, le jeu travaille le second. Dix minutes par jour suffisent pour que les touches blanches cessent d'être un mur et deviennent une carte.</p>
+  </section>
+</main>
+
+<footer>Fait pour s'entraîner, une note à la fois.</footer>
+
+<script>
+(function() {
+  const NOTE_NAMES = ['Do','Do♯','Ré','Ré♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
+  // one full octave of white keys, ending on the octave's Do (step 12)
+  const OCTAVE_NOTES = [
+    { step: 0,  black: 1  },
+    { step: 2,  black: 3  },
+    { step: 4,  black: null },
+    { step: 5,  black: 6  },
+    { step: 7,  black: 8  },
+    { step: 9,  black: 10 },
+    { step: 11, black: null },
+    { step: 12, black: null } // final Do
+  ];
+  const KB_KEYS = ['q','2','w','3','e','r','5','t','6','y','7','u'];
+  const LEVELS = [
+    { label: 'Niv. 1 · Do Ré Mi',        notes: [0,2,4] },
+    { label: 'Niv. 2 · + Fa',            notes: [0,2,4,5] },
+    { label: 'Niv. 3 · + Sol',           notes: [0,2,4,5,7] },
+    { label: 'Niv. 4 · + La',            notes: [0,2,4,5,7,9] },
+    { label: 'Niv. 5 · + Si',            notes: [0,2,4,5,7,9,11] },
+    { label: 'Niv. 6 · Octave entière',  notes: [0,2,4,5,7,9,11,12] },
+    { label: 'Niv. 7 · Avec les dièses', notes: [0,1,2,3,4,5,6,7,8,9,10,11,12] }
+  ];
+
+  let audioCtx = null;
+  function ctx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+  function freq(semitoneFromC4) {
+    return 261.63 * Math.pow(2, semitoneFromC4 / 12);
+  }
+  function playTone(semitone) {
+    try {
+      const c = ctx();
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq(semitone);
+      gain.gain.setValueAtTime(0.0001, c.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.28, c.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 1.1);
+      osc.connect(gain).connect(c.destination);
+      osc.start();
+      osc.stop(c.currentTime + 1.15);
+    } catch (e) { /* audio unavailable, fail silently */ }
+  }
+
+  function buildKeyboard(containerId, opts) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    const octaveBase = opts.octaveBase; // semitone offset for C
+    const showLabels = opts.showLabels;
+    const onKey = opts.onKey;
+
+    const whiteCount = OCTAVE_NOTES.length;
+    const whiteWidthPct = 100 / whiteCount;
+    const blackWidthPct = whiteWidthPct * 0.58;
+
+    OCTAVE_NOTES.forEach((note) => {
+      const el = document.createElement('div');
+      el.className = 'white-key';
+      el.dataset.semitone = octaveBase + note.step;
+      if (showLabels) {
+        const lbl = document.createElement('span');
+        lbl.className = 'key-label';
+        lbl.textContent = NOTE_NAMES[note.step % 12];
+        el.appendChild(lbl);
+      }
+      el.addEventListener('click', () => onKey(octaveBase + note.step, el));
+      container.appendChild(el);
+    });
+
+    // position black keys relative to white key widths
+    OCTAVE_NOTES.forEach((note, i) => {
+      if (note.black === null) return;
+      const el = document.createElement('div');
+      el.className = 'black-key';
+      el.style.width = blackWidthPct + '%';
+      el.dataset.semitone = octaveBase + note.black;
+      const leftPct = ((i + 1) * whiteWidthPct) - (blackWidthPct / 2);
+      el.style.left = leftPct + '%';
+      el.addEventListener('click', (e) => { e.stopPropagation(); onKey(octaveBase + note.black, el); });
+      container.appendChild(el);
+    });
+
+    return container.querySelectorAll('.white-key, .black-key');
+  }
+
+  function flash(el) {
+    el.classList.add('active');
+    setTimeout(() => el.classList.remove('active'), 220);
+  }
+
+  // --- Main piano ---
+  let showLabels = true;
+  let octaveBase = 0; // C4
+  function renderMain() {
+    buildKeyboard('keyboard', {
+      octaveBase, showLabels,
+      onKey: (semitone, el) => { playTone(semitone); flash(el); }
+    });
+  }
+  renderMain();
+
+  document.getElementById('toggleLabels').addEventListener('click', (e) => {
+    showLabels = !showLabels;
+    e.target.textContent = showLabels ? 'Cacher les noms' : 'Afficher les noms';
+    renderMain();
+  });
+  document.getElementById('toggleOctave').addEventListener('click', () => {
+    octaveBase = octaveBase === 0 ? 12 : 0;
+    renderMain();
+  });
+
+  // computer keyboard support for main piano
+  window.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    const idx = KB_KEYS.indexOf(e.key.toLowerCase());
+    if (idx === -1) return;
+    const semitone = octaveBase + idx;
+    playTone(semitone);
+    const el = document.querySelector(`#keyboard [data-semitone="${semitone}"]`);
+    if (el) flash(el);
+  });
+
+  // --- Game ---
+  let currentLevel = 0;
+  let exerciseActive = false;
+  let exerciseNotes = [];
+  let exerciseIndex = 0;
+  let exerciseScore = 0;
+  let currentSemitone = null;
+  let awaitingGuess = false;
+
+  const statusEl = document.getElementById('gameStatus');
+  const scoreEl = document.getElementById('score');
+  const levelControls = document.getElementById('levelControls');
+  const startBtn = document.getElementById('playNote');
+
+  const COMMENTS = [
+    { min: 10, emoji: '🏆', text: 'Parfait ! Oreille absolue en approche.' },
+    { min: 8,  emoji: '🌟', text: 'Excellent, presque sans faute.' },
+    { min: 6,  emoji: '👍', text: 'Bien joué, tu progresses vraiment.' },
+    { min: 4,  emoji: '🙂', text: 'Pas mal, encore un peu d\'entraînement.' },
+    { min: 2,  emoji: '💪', text: 'Continue, ça va venir.' },
+    { min: 0,  emoji: '🎧', text: 'Recommence, l\'oreille se muscle avec la pratique.' }
+  ];
+  function commentFor(score) {
+    return COMMENTS.find(c => score >= c.min);
+  }
+
+  function updateScoreDisplay() {
+    scoreEl.textContent = `${exerciseScore} / 10`;
+  }
+
+  function resetGameUI() {
+    exerciseActive = false;
+    awaitingGuess = false;
+    exerciseScore = 0;
+    exerciseIndex = 0;
+    startBtn.textContent = '▶ Commencer';
+    updateScoreDisplay();
+    statusEl.textContent = 'Choisis un niveau, puis appuie sur « Commencer ».';
+    statusEl.className = 'game-status';
+  }
+
+  function renderLevels() {
+    levelControls.innerHTML = '';
+    LEVELS.forEach((level, i) => {
+      const btn = document.createElement('button');
+      btn.textContent = level.label;
+      btn.className = i === currentLevel ? 'primary' : '';
+      btn.addEventListener('click', () => {
+        currentLevel = i;
+        resetGameUI();
+        renderLevels();
+      });
+      levelControls.appendChild(btn);
+    });
+  }
+  renderLevels();
+
+  function playCurrentNote() {
+    currentSemitone = exerciseNotes[exerciseIndex];
+    playTone(currentSemitone);
+    awaitingGuess = true;
+    statusEl.textContent = `Note ${exerciseIndex + 1} / 10 — écoute, puis clique sur la touche.`;
+    statusEl.className = 'game-status';
+  }
+
+  function startExercise() {
+    const pool = LEVELS[currentLevel].notes;
+    exerciseNotes = Array.from({ length: 10 }, () => pool[Math.floor(Math.random() * pool.length)]);
+    exerciseIndex = 0;
+    exerciseScore = 0;
+    exerciseActive = true;
+    startBtn.textContent = '↻ Recommencer';
+    updateScoreDisplay();
+    playCurrentNote();
+  }
+
+  function finishExercise() {
+    exerciseActive = false;
+    awaitingGuess = false;
+    startBtn.textContent = '▶ Commencer';
+    const c = commentFor(exerciseScore);
+    statusEl.textContent = `${c.emoji} ${exerciseScore} / 10 — ${c.text}`;
+    statusEl.className = 'game-status ' + (exerciseScore >= 6 ? 'correct' : 'wrong');
+  }
+
+  startBtn.addEventListener('click', startExercise);
+
+  buildKeyboard('gameKeyboard', {
+    octaveBase: 0, showLabels: false,
+    onKey: (semitone, el) => {
+      if (!exerciseActive || !awaitingGuess) { playTone(semitone); flash(el); return; }
+      awaitingGuess = false;
+      const isCorrect = semitone === currentSemitone;
+      if (isCorrect) {
+        exerciseScore++;
+        statusEl.textContent = 'Bonne oreille ! C\'était ' + NOTE_NAMES[currentSemitone % 12] + '.';
+        statusEl.className = 'game-status correct';
+      } else {
+        statusEl.textContent = 'Pas tout à fait — c\'était ' + NOTE_NAMES[currentSemitone % 12] + '.';
+        statusEl.className = 'game-status wrong';
+      }
+      flash(el);
+      exerciseIndex++;
+      updateScoreDisplay();
+      if (exerciseIndex < 10) {
+        setTimeout(playCurrentNote, 900);
+      } else {
+        setTimeout(finishExercise, 900);
+      }
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
