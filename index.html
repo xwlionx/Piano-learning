@@ -187,6 +187,112 @@
     line-height: 1.6;
     opacity: 0.8;
   }
+
+  /* Book */
+  .book-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.1rem;
+  }
+  .book {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    aspect-ratio: 3 / 4;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 16px 34px rgba(20,12,4,0.16);
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .book-page {
+    position: absolute;
+    inset: 0;
+    padding: 2.1rem 1.9rem 1.9rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    opacity: 0;
+    transform: translateX(16px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+  }
+  .book-page.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+  .book-page.cover {
+    background: linear-gradient(155deg, var(--walnut), var(--walnut-soft));
+    color: var(--ivory);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .book-page.cover .book-page-title {
+    font-size: clamp(1.6rem, 5vw, 2rem);
+  }
+  .book-page.cover .book-page-body { opacity: 0.75; }
+  .book-page-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    margin: 0 0 0.75rem;
+  }
+  .book-decor {
+    font-size: 2.1rem;
+    letter-spacing: 0.35rem;
+    opacity: 0.3;
+    margin-bottom: 0.9rem;
+    line-height: 1;
+  }
+  .book-page.cover .book-decor {
+    opacity: 0.5;
+    font-size: 2.4rem;
+    margin-bottom: 1.1rem;
+  }
+  .book-page-body {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    opacity: 0.85;
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 0.2rem;
+  }
+  .book-page-body p { margin: 0 0 0.7rem; }
+  .book-page-body .ex {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.85rem;
+    opacity: 0.75;
+    font-style: italic;
+  }
+  .book-page-num {
+    position: absolute;
+    bottom: 0.9rem;
+    right: 1.1rem;
+    font-size: 0.75rem;
+    opacity: 0.4;
+  }
+  .book-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .book-nav span {
+    font-size: 0.85rem;
+    opacity: 0.6;
+    min-width: 3.5em;
+    text-align: center;
+  }
+  .book-nav button:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .book-nav button:disabled:hover { background: transparent; }
+
   footer {
     text-align: center;
     padding: 2rem 1rem 3rem;
@@ -209,7 +315,6 @@
     <div class="piano-wrap">
       <div class="piano-controls">
         <button id="toggleLabels" class="primary">Cacher les noms</button>
-        <button id="toggleOctave">Octave grave / aiguë</button>
       </div>
       <div class="keyboard" id="keyboard"></div>
     </div>
@@ -224,6 +329,7 @@
       <div class="piano-controls" id="levelControls"></div>
       <div class="piano-controls">
         <button id="playNote" class="primary">▶ Commencer</button>
+        <button id="stopBtn">⏹ Stop</button>
       </div>
       <div class="keyboard" id="gameKeyboard" style="margin-top:1.25rem;"></div>
     </div>
@@ -232,6 +338,19 @@
   <section>
     <div class="section-title">Pourquoi commencer ainsi</div>
     <p class="about">Reconnaître une note à l'oreille et savoir où la trouver sont deux réflexes distincts — le clavier ci-dessus travaille le premier, le jeu travaille le second. Dix minutes par jour suffisent pour que les touches blanches cessent d'être un mur et deviennent une carte.</p>
+  </section>
+
+  <section id="book-section">
+    <div class="section-title">Petit livre de solfège</div>
+    <p class="section-sub">Clique sur le livre ou utilise les flèches pour tourner les pages.</p>
+    <div class="book-wrap">
+      <div class="book" id="book"></div>
+      <div class="book-nav">
+        <button id="prevPage">‹ Précédent</button>
+        <span id="pageIndicator">1 / 8</span>
+        <button id="nextPage">Suivant ›</button>
+      </div>
+    </div>
   </section>
 </main>
 
@@ -251,7 +370,7 @@
     { step: 11, black: null },
     { step: 12, black: null } // final Do
   ];
-  const KB_KEYS = ['q','2','w','3','e','r','5','t','6','y','7','u'];
+  const KB_KEYS = ['a','2','z','3','e','r','5','t','6','y','7','u','i'];
   const LEVELS = [
     { label: 'Niv. 1 · Do Ré Mi',        notes: [0,2,4] },
     { label: 'Niv. 2 · + Fa',            notes: [0,2,4,5] },
@@ -334,7 +453,7 @@
 
   // --- Main piano ---
   let showLabels = true;
-  let octaveBase = 0; // C4
+  const octaveBase = 0; // C4
   function renderMain() {
     buildKeyboard('keyboard', {
       octaveBase, showLabels,
@@ -346,10 +465,6 @@
   document.getElementById('toggleLabels').addEventListener('click', (e) => {
     showLabels = !showLabels;
     e.target.textContent = showLabels ? 'Cacher les noms' : 'Afficher les noms';
-    renderMain();
-  });
-  document.getElementById('toggleOctave').addEventListener('click', () => {
-    octaveBase = octaveBase === 0 ? 12 : 0;
     renderMain();
   });
 
@@ -372,11 +487,13 @@
   let exerciseScore = 0;
   let currentSemitone = null;
   let awaitingGuess = false;
+  let noteTimeout = null;
 
   const statusEl = document.getElementById('gameStatus');
   const scoreEl = document.getElementById('score');
   const levelControls = document.getElementById('levelControls');
   const startBtn = document.getElementById('playNote');
+  const stopBtn = document.getElementById('stopBtn');
 
   const COMMENTS = [
     { min: 10, emoji: '🏆', text: 'Parfait ! Oreille absolue en approche.' },
@@ -395,6 +512,7 @@
   }
 
   function resetGameUI() {
+    clearTimeout(noteTimeout);
     exerciseActive = false;
     awaitingGuess = false;
     exerciseScore = 0;
@@ -430,6 +548,7 @@
   }
 
   function startExercise() {
+    clearTimeout(noteTimeout);
     const pool = LEVELS[currentLevel].notes;
     exerciseNotes = Array.from({ length: 10 }, () => pool[Math.floor(Math.random() * pool.length)]);
     exerciseIndex = 0;
@@ -449,7 +568,18 @@
     statusEl.className = 'game-status ' + (exerciseScore >= 6 ? 'correct' : 'wrong');
   }
 
+  function stopExercise() {
+    if (!exerciseActive) return;
+    clearTimeout(noteTimeout);
+    exerciseActive = false;
+    awaitingGuess = false;
+    startBtn.textContent = '▶ Commencer';
+    statusEl.textContent = `Exercice arrêté à la note ${exerciseIndex} / 10 (${exerciseScore} correcte${exerciseScore > 1 ? 's' : ''}).`;
+    statusEl.className = 'game-status';
+  }
+
   startBtn.addEventListener('click', startExercise);
+  stopBtn.addEventListener('click', stopExercise);
 
   buildKeyboard('gameKeyboard', {
     octaveBase: 0, showLabels: false,
@@ -469,11 +599,125 @@
       exerciseIndex++;
       updateScoreDisplay();
       if (exerciseIndex < 10) {
-        setTimeout(playCurrentNote, 900);
+        noteTimeout = setTimeout(playCurrentNote, 900);
       } else {
-        setTimeout(finishExercise, 900);
+        noteTimeout = setTimeout(finishExercise, 900);
       }
     }
+  });
+
+  // --- Book ---
+  const BOOK_PAGES = [
+    { cover: true, decor: '♪ ♫ ♪', title: 'Petit guide de solfège',
+      body: ['Quelques notions de base, une page à la fois.'] },
+    { decor: '𝅘𝅥 𝅘𝅥𝅮 ♪ 𝅗𝅥', title: 'Les notes',
+      body: [
+        'Il y a sept noms de notes : Do Ré Mi Fa Sol La Si. Après Si, on retombe sur Do, une octave plus haut — le même nom, mais un son plus aigu.',
+        'L\'écart entre deux notes voisines est en général un ton, sauf entre Mi-Fa et Si-Do, où l\'écart n\'est que d\'un demi-ton : ce sont les deux seuls endroits où il n\'y a pas de touche noire entre deux touches blanches.'
+      ],
+      ex: 'Le Do du milieu du piano s\'appelle Do central (ou Do3/Do4 selon la convention) ; c\'est le repère dont partent la clé de Sol vers l\'aigu et la clé de Fa vers le grave.'
+    },
+    { decor: '𝄞 𝄢', title: 'La portée et les clés',
+      body: [
+        'La portée est faite de 5 lignes et 4 interlignes, numérotées de bas en haut. Une note peut se placer sur une ligne ou dans un interligne.',
+        'La clé de Sol (𝄞) enroule son tracé autour de la 2ᵉ ligne, qui devient donc la note Sol : elle sert pour les sons aigus, typiquement la main droite au piano.',
+        'La clé de Fa (𝄢) place deux points autour de la 4ᵉ ligne, qui devient la note Fa : elle sert pour les sons graves, typiquement la main gauche.'
+      ],
+      ex: 'En clé de Sol, une note posée sur la 1ʳᵉ ligne (la plus basse) est un Mi ; sur la 2ᵉ ligne, un Sol ; sur la 3ᵉ, un Si.'
+    },
+    { decor: '𝅝 𝅗𝅥 𝅘𝅥 𝅘𝅥𝅮', title: 'La durée des notes',
+      body: [
+        'Chaque figure de note vaut la moitié de la précédente : ronde (𝅝) = 4 temps, blanche (𝅗𝅥) = 2 temps, noire (𝅘𝅥) = 1 temps, croche (𝅘𝅥𝅮) = 1/2 temps, double-croche = 1/4 de temps.',
+        'On peut toujours remplacer une figure par deux figures deux fois plus courtes, sans changer la durée totale.'
+      ],
+      ex: 'Dans une mesure à 4 temps, on peut jouer : une ronde seule, ou deux blanches, ou quatre noires, ou huit croches — cela dure toujours aussi longtemps.'
+    },
+    { decor: '𝄻 𝄼 𝄽 𝄾', title: 'Les silences',
+      body: [
+        'À chaque figure de note correspond un silence de même durée : pause (𝄻, 4 temps), demi-pause (𝄼, 2 temps), soupir (𝄽, 1 temps), demi-soupir (𝄾, 1/2 temps).',
+        'Le soupir est le silence le plus courant : il se place sur la portée comme une petite virgule inclinée, et dure exactement le temps d\'une noire.'
+      ],
+      ex: 'Une mesure à 4 temps peut contenir : un soupir (silence) suivi de trois noires jouées — le total fait toujours 4 temps.'
+    },
+    { decor: '♯ ♭ ♮', title: 'Les altérations',
+      body: [
+        'Le dièse ♯ monte la note d\'un demi-ton, le bémol ♭ la descend d\'un demi-ton, et le bécarre ♮ annule une altération posée plus tôt dans la mesure.',
+        'Deux notes qui sonnent pareil mais s\'écrivent différemment sont dites enharmoniques.'
+      ],
+      ex: 'Do♯ (Do dièse) et Ré♭ (Ré bémol) désignent la même touche noire du piano, entre Do et Ré — seul le nom change selon le contexte.'
+    },
+    { decor: '4/4 · 3/4 · 2/4', title: 'La mesure',
+      body: [
+        'Le chiffrage indicateur (les deux chiffres au début de la portée) fixe le rythme : le chiffre du haut dit combien de temps il y a par mesure, celui du bas dit quelle figure de note vaut un temps (4 = la noire, 8 = la croche).',
+        'Des barres verticales découpent la musique en mesures de durée égale.'
+      ],
+      ex: '4/4 (quatre noires par mesure) est le rythme le plus courant en pop et en rock ; 3/4 (trois noires) est celui de la valse ; 6/8 (six croches, ressenti en deux temps) est celui de nombreuses berceuses.'
+    },
+    { decor: '🎵 🎹 🎶', title: 'À toi de jouer',
+      body: [
+        'Retourne au clavier plus haut : essaie de repérer les notes Do-Ré-Mi à l\'oreille avec le jeu, puis observe où elles se trouvent sur les touches.',
+        'Avec un peu de pratique quotidienne, ces repères deviennent des réflexes.'
+      ]
+    }
+  ];
+
+  const bookEl = document.getElementById('book');
+  const prevPageBtn = document.getElementById('prevPage');
+  const nextPageBtn = document.getElementById('nextPage');
+  const pageIndicator = document.getElementById('pageIndicator');
+  let bookIndex = 0;
+
+  BOOK_PAGES.forEach((page, i) => {
+    const el = document.createElement('div');
+    el.className = 'book-page' + (page.cover ? ' cover' : '');
+    const decor = document.createElement('div');
+    decor.className = 'book-decor';
+    decor.textContent = page.decor || '';
+    const title = document.createElement('div');
+    title.className = 'book-page-title';
+    title.textContent = page.title || '';
+    const body = document.createElement('div');
+    body.className = 'book-page-body';
+    (page.body || []).forEach((paragraph) => {
+      const p = document.createElement('p');
+      p.textContent = paragraph;
+      body.appendChild(p);
+    });
+    if (page.ex) {
+      const p = document.createElement('p');
+      p.className = 'ex';
+      p.textContent = 'Exemple — ' + page.ex;
+      body.appendChild(p);
+    }
+    el.appendChild(decor);
+    el.appendChild(title);
+    el.appendChild(body);
+    if (!page.cover) {
+      const num = document.createElement('div');
+      num.className = 'book-page-num';
+      num.textContent = String(i);
+      el.appendChild(num);
+    }
+    bookEl.appendChild(el);
+  });
+  const bookPageEls = bookEl.querySelectorAll('.book-page');
+
+  function renderBook() {
+    bookPageEls.forEach((el, i) => el.classList.toggle('active', i === bookIndex));
+    pageIndicator.textContent = `${bookIndex + 1} / ${BOOK_PAGES.length}`;
+    prevPageBtn.disabled = bookIndex === 0;
+    nextPageBtn.disabled = bookIndex === BOOK_PAGES.length - 1;
+  }
+  renderBook();
+
+  function goToPage(i) {
+    bookIndex = Math.max(0, Math.min(BOOK_PAGES.length - 1, i));
+    renderBook();
+  }
+  prevPageBtn.addEventListener('click', () => goToPage(bookIndex - 1));
+  nextPageBtn.addEventListener('click', () => goToPage(bookIndex + 1));
+  bookEl.addEventListener('click', () => {
+    if (bookIndex < BOOK_PAGES.length - 1) goToPage(bookIndex + 1);
   });
 })();
 </script>
